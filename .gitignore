@@ -87,3 +87,10 @@ ENV/
 
 # Rope project settings
 .ropeproject
+
+#pycharm
+.idea
+
+
+login_data.json
+client_secret.json
