@@ -59,7 +59,7 @@ class NabSpider(scrapy.Spider):
         # self.sheet_last_date ="9/08/2016"
 
         try:
-            self.login_credentials_list = load_login_data('data/login_data/logins_data.json')
+            self.login_credentials_list = load_login_data('data/login_data/login_data.json')
         except (OSError, IOError) as e:
             self.logger.error("**************************************")
             self.logger.error(e)
@@ -119,9 +119,10 @@ class NabSpider(scrapy.Spider):
         card_types = 'vm'
         currency_list = response.xpath("//select[@id='currency']/option/@value").extract()
         from_date_epoch = self.from_date_epoch
-        from_date = time.strftime("%d/%m/%Y", time.gmtime(from_date_epoch))
         time_loop = True
         while time_loop:
+            from_date = time.strftime("%d/%m/%Y", time.gmtime(from_date_epoch))
+
             for currency in currency_list:
                 request = scrapy.FormRequest.from_response(
                     response,
