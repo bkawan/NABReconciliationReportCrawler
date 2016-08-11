@@ -61,9 +61,9 @@ NEWSPIDER_MODULE = 'NABReconciliationReportCrawler.spiders'
 
 # Configure item pipelines
 # See http://scrapy.readthedocs.org/en/latest/topics/item-pipeline.html
-#ITEM_PIPELINES = {
-#    'NABReconciliationReportCrawler.pipelines.SomePipeline': 300,
-#}
+ITEM_PIPELINES = {
+   'NABReconciliationReportCrawler.pipelines.NabreconciliationreportcrawlerPipeline': 300,
+}
 
 # Enable and configure the AutoThrottle extension (disabled by default)
 # See http://doc.scrapy.org/en/latest/topics/autothrottle.html
@@ -83,3 +83,14 @@ NEWSPIDER_MODULE = 'NABReconciliationReportCrawler.spiders'
 #HTTPCACHE_DIR='httpcache'
 #HTTPCACHE_IGNORE_HTTP_CODES=[]
 #HTTPCACHE_STORAGE='scrapy.extensions.httpcache.FilesystemCacheStorage'
+
+
+# 1iNeNK-ATYFpu1wvS_JLZKjzcVVDqYbmcW6Dn8c705Xs
+# MY= 1ySYHMNyx6FDumf2AFDmwLxI5dYwU1tkiaalbmiwGHa8
+SHEETS_PARAMETERS = {
+
+    'spreadsheetId': '1iNeNK-ATYFpu1wvS_JLZKjzcVVDqYbmcW6Dn8c705Xs',
+    'client_secret_file': 'client_secret.json',
+    'application_name': 'FinancialData',
+    'sheet_name': None
+}
