@@ -59,7 +59,7 @@ class NabSpider(scrapy.Spider):
         # self.sheet_last_date ="9/08/2016"
 
         try:
-            self.login_credentials_list = load_login_data('data/login_data/logins_data.json')
+            self.login_credentials_list = load_login_data('data/login_data/login_data.json')
         except (OSError, IOError) as e:
             self.logger.error("**************************************")
             self.logger.error(e)
