@@ -58,8 +58,8 @@ class NabSpider(scrapy.Spider):
         self.from_date = self.from_date.strftime("%d/%m/%Y")
         self.to_date = date.today().strftime("%d/%m/%Y")
         self.to_date = "12/08/2016"
-        self.from_date = "01/07/2016"
-        self.to_date = "03/08/2016"
+        # self.from_date = "01/07/2016"
+        # self.to_date = "01/08/2016"
 
         print("*************************************")
         print ("Sheet From Date", self.from_date)
