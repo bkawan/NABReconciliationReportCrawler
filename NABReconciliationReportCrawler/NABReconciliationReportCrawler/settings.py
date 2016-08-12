@@ -89,7 +89,7 @@ ITEM_PIPELINES = {
 # MY= 1ySYHMNyx6FDumf2AFDmwLxI5dYwU1tkiaalbmiwGHa8
 SHEETS_PARAMETERS = {
 
-    'spreadsheetId': '1iNeNK-ATYFpu1wvS_JLZKjzcVVDqYbmcW6Dn8c705Xs',
+    'spreadsheetId': '1ySYHMNyx6FDumf2AFDmwLxI5dYwU1tkiaalbmiwGHa8',
     'client_secret_file': 'client_secret.json',
     'application_name': 'FinancialData',
     'sheet_name': None

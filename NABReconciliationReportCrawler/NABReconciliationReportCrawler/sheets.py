@@ -39,11 +39,11 @@ class Sheets():
 
         self.last_row = self.get_row(last=True)
 
-        print("********** INIT ****************")
-        print('self.last_row',self.last_row)
-        print('sheet',sheet)
-        print('result',result)
-        print ("********** INIT *****************")
+        # print("********** INIT ****************")
+        # print('self.last_row',self.last_row)
+        # print('sheet',sheet)
+        # print('result',result)
+        # print ("********** INIT *****************")
 
     def get_credentials(self):
         """Gets valid user credentials from storage.
@@ -69,7 +69,7 @@ class Sheets():
                 credentials = tools.run_flow(flow, store, flags)
             else: # Needed only for compatibility with Python 2.6
                 credentials = tools.run(flow, store)
-            print('Storing credentials to ' + credential_path)
+            # print('Storing credentials to ' + credential_path)
         return credentials
 
     def get_last_date(self, row_no = False):
@@ -84,12 +84,12 @@ class Sheets():
         values = result.get('values',[])
 
         last_date = values[0][-1]
-        print("****** GET LAST DATE **********")
-        print("RAnge NAme", rangeName)
-        print("Results", result)
-        print("VAlues", values)
-        print("Last DAte", last_date)
-        print("******** Get Last DAte ****************")
+        # print("****** GET LAST DATE **********")
+        # print("RAnge NAme", rangeName)
+        # print("Results", result)
+        # print("VAlues", values)
+        # print("Last DAte", last_date)
+        # print("******** Get Last DAte ****************")
 
         if row_no:
             return len(values[0])
@@ -105,20 +105,20 @@ class Sheets():
 
     def get_row(self, row_no = None, last = False):
 
-        print("****************")
-        print("rwo now",row_no)
-        print("last",last)
-        print("****************")
+        # print("****************")
+        # print("rwo now",row_no)
+        # print("last",last)
+        # print("****************")
         if not row_no and not last:
             raise ValueError('Invalid usage')
 
         if last:
             row_no = self.get_last_date(row_no = True)
 
-            print("******* ROW NO *********")
-            print(row_no)
+            # print("******* ROW NO *********")
+            # print(row_no)
 
-        print(row_no)
+        # print(row_no)
 
         rangeName = self.sheet_name + '!'
         rangeName += 'A{0}:K{0}'.format(row_no)
@@ -130,60 +130,73 @@ class Sheets():
         values = result.get('values',[])
 
         row = values[0]
-        print("***** GET Row ***********")
-        print("rwo no:", row_no)
-        print("last", last)
-        print("Range NAme",rangeName)
-        print("result",result)
-        print("values",values)
-        print("Row",row)
-        print("****************")
+        # print("***** GET Row ***********")
+        # print("rwo no:", row_no)
+        # print("last", last)
+        # print("Range NAme",rangeName)
+        # print("result",result)
+        # print("values",values)
+        # print("Row",row)
+        # print("****************")
 
 
         return row
 
     def append_row(self, row):
 
-        print("*********** APPEND ROW **************")
-        print("ROW", row)
-        print("*************************")
+        # print("*********** APPEND ROW **************")
+        # print("ROW", row)
+        # print("*************************")
 
         if not type(row) is list:
             raise Exception('row is not a list')
 
         row_count = self.get_last_date(row_no=True) + 2
 
-        print("***** ROW Count ************")
-        print(row_count)
-        print("*****************")
+        print("********************")
+        print('Item ', row)
+        # Item  [u'09/08/2016', u'AUD', u'$0.00']
+        rangeName =None
+        new_row = None
+        if row[2] == 'AUD':
+            rangeName = self.sheet_name + '!'
+            rangeName += 'B{0}:B{0}'.format(row_count)
+            new_row = [row['date'],row['total_amounts']]
 
-        new_row = row[0:11] # A-K
+        print("********************")
 
-        print("****** NEW ROW ***********")
-        print(new_row)
-        print("*****************")
+        # print("***** ROW Count ************")
+        # print(row_count)
+        # print("*****************")
 
-        rangeName = self.sheet_name + '!'
-        rangeName += 'A{0}:V{0}'.format(row_count)
-        print ("Range Name:",rangeName)
+        # new_row = row[0:11] # A-K
 
-        body = {
-            'range' : rangeName,
-            'values' : [new_row],
-            'majorDimension' : 'ROWS'
-        }
+        # print("****** NEW ROW ***********")
+        # print(new_row)
+        # print("*****************")
 
-        print("********** BODY ***************")
-        print("BODY",body)
-        result = self.service.spreadsheets().values().update(
-                spreadsheetId=self.spreadsheetId, range=rangeName,
-                valueInputOption='USER_ENTERED', body=body).execute()
+        # rangeName = self.sheet_name + '!'
+        # rangeName += 'A{0}:V{0}'.format(row_count)
+        # print ("Range Name:",rangeName)
+        if new_row:
 
-        print("********** Result ***************")
-
-        print ("RSULT",result)
-        print("************************")
-        return result
+            body = {
+                'range' : rangeName,
+                'values' : [new_row],
+                'majorDimension' : 'ROWS'
+            }
+        #
+        # print("********** BODY ***************")
+        # print("BODY",body)
+            result = self.service.spreadsheets().values().update(
+                    spreadsheetId=self.spreadsheetId, range=rangeName,
+                    valueInputOption='USER_ENTERED', body=body).execute()
+        #
+        # print("********** Result ***************")
+        #
+        # print ("RSULT",result)
+        # print("************************")
+            return result
 
     def sort_sheet(self):
 
@@ -195,7 +208,7 @@ class Sheets():
                     'sortRange': {
                         'range': {
                             'sheetId': self.sheet_id,
-                            'startRowIndex': 2,
+                            'startRowIndex': 1,
                             'startColumnIndex': 0
                         },
                         'sortSpecs': [

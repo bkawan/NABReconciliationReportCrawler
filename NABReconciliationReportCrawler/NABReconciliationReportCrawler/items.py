@@ -14,4 +14,4 @@ class NabreconciliationreportcrawlerItem(scrapy.Item):
     currency = scrapy.Field()
     date = scrapy.Field()
 
-    report = scrapy.Field()
+    # report = scrapy.Field()
