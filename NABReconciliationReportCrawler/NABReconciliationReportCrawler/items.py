@@ -10,8 +10,10 @@ import scrapy
 
 class NabreconciliationreportcrawlerItem(scrapy.Item):
     # define the fields for your item here like:
-    total_amounts = scrapy.Field()
+    # report = scrapy.Field()
     currency = scrapy.Field()
     date = scrapy.Field()
+    total_amounts = scrapy.Field()
+
 
     # report = scrapy.Field()

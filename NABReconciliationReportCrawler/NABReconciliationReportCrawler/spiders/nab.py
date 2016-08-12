@@ -2,16 +2,15 @@
 import scrapy
 from scrapy.http import Request, FormRequest
 
-from scrapy import selector, Selector
+from scrapy.shell import  inspect_response
 from scrapy.utils.response import open_in_browser
 import sys
 import codecs
 import locale
 import json
-import time
 import re
+from datetime import  date
 import datetime
-from scrapy.shell import inspect_response
 from NABReconciliationReportCrawler.items import NabreconciliationreportcrawlerItem
 from NABReconciliationReportCrawler.sheets import Sheets
 from NABReconciliationReportCrawler import settings
@@ -40,33 +39,33 @@ class NabSpider(scrapy.Spider):
         self.client_id = client_id.strip()
 
         self.cli = 1
-        self.currency_list = ['AUD', 'EUR', 'USD', 'CAD', 'CHF', 'GBP', 'HKD', 'JPY', 'NZD', 'SGD']
+        self.currency_list = ['AUD', 'EUR', 'USD', 'CAD', 'CHF', 'GBP', 'HKD', 'JPY', 'NZD', 'SGD',False]
+        # self.currency_list = ['USD',False]
         self.currency = 'AUD'
 
         """ Setting Sheet name by client id """
         settings.SHEETS_PARAMETERS['sheet_name'] = self.client_id
         #
-        # sheet = Sheets(
-        #     settings.SHEETS_PARAMETERS['spreadsheetId'],
-        #     settings.SHEETS_PARAMETERS['client_secret_file'],
-        #     settings.SHEETS_PARAMETERS['application_name'],
-        #     settings.SHEETS_PARAMETERS['sheet_name'],
-        # )
+        sheet = Sheets(
+            settings.SHEETS_PARAMETERS['spreadsheetId'],
+            settings.SHEETS_PARAMETERS['client_secret_file'],
+            settings.SHEETS_PARAMETERS['application_name'],
+            settings.SHEETS_PARAMETERS['sheet_name'],
+        )
 
-        # self.sheet_last_date = sheet.get_last_date()
-        self.sheet_last_date = "06/08/2016"
+        self.sheet_last_date = sheet.get_last_date()
+        self.from_date = (datetime.datetime.strptime(self.sheet_last_date,"%d/%m/%Y") + datetime.timedelta(days=1))
+        self.from_date = self.from_date.strftime("%d/%m/%Y")
+        self.to_date = date.today().strftime("%d/%m/%Y")
+        self.to_date = "12/08/2016"
+        self.from_date = "01/07/2016"
+        self.to_date = "03/08/2016"
 
         print("*************************************")
-        print ("Sheet Last Date", self.sheet_last_date)
+        print ("Sheet From Date", self.from_date)
         print("**************************************")
-        print ("Sheet Last Date", self.sheet_last_date)
+        print ("Sheet To Date", self.to_date)
 
-        self.sheet_last_date_epoch = int((time.mktime(time.strptime(self.sheet_last_date, '%d/%m/%Y')))) - time.timezone
-        self.from_date_epoch = self.sheet_last_date_epoch + 86400  # add 1
-        self.new_from_date_epoch = self.from_date_epoch
-        self.time_today_epoch = time.time()
-        if self.new_from_date_epoch > self.time_today_epoch:
-            self.new_from_date_epoch = False
 
         try:
             self.login_credentials_list = load_login_data('data/login_data/login_data.json')
@@ -122,70 +121,54 @@ class NabSpider(scrapy.Spider):
             yield scrapy.Request(link, self.search_reconciliation_report)
 
     def search_reconciliation_report(self, response):
+        # inspect_response(response, self)
 
-        from_date = "10/08/2016"
 
-        currency_list = ['AUD', 'EUR', 'USD', 'CAD', 'CHF', 'GBP', 'HKD', 'JPY', 'NZD', 'SGD']
+        while self.currency:
 
-        for currency in currency_list:
-            request = scrapy.FormRequest.from_response(
+            yield scrapy.FormRequest.from_response(
                 response,
                 formdata={
                     'merchid': self.client_id,
-                    'fromdate': from_date,
-                    'todate': from_date,
+                    'fromdate': self.from_date,
+                    'todate': self.to_date,
                     'cardtypes': 'vm',
-                    'currency': currency,
-                    '_showzeroes': 'on'
+                    'currency': self.currency,
 
                 }
                 ,
                 callback=self.search_results,
                 method="POST",
-                dont_filter=True)
-            yield request
+                # dont_filter=True,
+                meta={'currency': self.currency}
 
+            )
 
-            # item = NabreconciliationreportcrawlerItem()
-            #
-            # item['date'] = from_date,
-            # item['currency'] = currency,
-            # request.meta['item'] = item
-
-            # yield request
 
     def search_results(self, response):
+        # inspect_response(response,self)
+
 
         data_table_elem = response.xpath("//table[@id='datatable']")
-        table_data_list = data_table_elem.xpath('.//td/text()').extract()
-        currency = response.xpath("//select[@id='currency']/option[@selected='selected']/@value").extract()
-        total_amounts = table_data_list[-1]
 
-        print("*****************")
-        print('Response Staus',response.status)
-        print ("Request Body", response.request.body)
-        print("Response xpath currency",currency)
-        print("Response xpath Amount",total_amounts)
+        if data_table_elem:
 
-        print("*****************")
-        open_in_browser(response)
+            self.currency = self.currency_list[self.cli]
+            self.cli += 1
+            # inspect_response(response,self)
 
 
-        # inspect_response(response, self)
+            for data in data_table_elem.xpath(".//tr"):
+                # date = data.xpath(".//td/a/@href").extract()
+                date = data.xpath("normalize-space(.//td/a/@href)").extract_first()
+                if date:
+                    date = re.search(r'[\d\/]+', date).group()
+                    total_amounts = data.xpath(".//td/text()").extract()[-1]
+                    print(date,total_amounts)
+                    item = NabreconciliationreportcrawlerItem()
+                    item['total_amounts'] = total_amounts
+                    item['currency'] = response.meta['currency']
+                    item['date'] = date
 
+                    yield item
 
-
-
-        #
-        # if table_data_list:
-        #
-        #     total_amounts = table_data_list[-1]
-        #
-        #     item = response.meta['item']
-        #     item['total_amounts'] = total_amounts
-        #
-        #     print("***********************")
-        #     print(item)
-        #     print("***********************")
-        #
-        #     yield item

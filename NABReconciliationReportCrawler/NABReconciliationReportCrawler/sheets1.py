@@ -73,11 +73,11 @@ class Sheets():
         return credentials
 
     def get_last_date(self, row_no = False):
-        date_range_name = self.sheet_name + '!'
-        date_range_name += 'A1:A'
+        rangeName = self.sheet_name + '!'
+        rangeName += 'A1:A'
 
         result = self.service.spreadsheets().values().get(
-                spreadsheetId=self.spreadsheetId, range=date_range_name,
+                spreadsheetId=self.spreadsheetId, range=rangeName,
                 majorDimension='COLUMNS').execute()
 
 
@@ -85,7 +85,7 @@ class Sheets():
 
         last_date = values[0][-1]
         print("****** GET LAST DATE **********")
-        print("RAnge NAme", date_range_name)
+        print("RAnge NAme", rangeName)
         print("Results", result)
         print("VAlues", values)
         print("Last DAte", last_date)
@@ -95,35 +95,6 @@ class Sheets():
             return len(values[0])
         else:
             return last_date
-
-
-    def get_date_row_index(self, check_date):
-        date_range_name = self.sheet_name + '!'
-        date_range_name += 'A1:A'
-
-        result = self.service.spreadsheets().values().get(
-                spreadsheetId=self.spreadsheetId, range=date_range_name,
-                majorDimension='COLUMNS').execute()
-
-
-        values = result.get('values',[])
-
-        last_date = values[0]
-        date_row_index = False
-        if check_date in last_date:
-            date_row_index = last_date.index(check_date) +1
-
-
-        print("****** GET LAST DATE **********")
-        print("RAnge NAme", date_range_name)
-        print("Results", result)
-        print("VAlues", values)
-        print("Last DAte", last_date)
-        print("******** Get Last DAte ****************")
-
-        return date_row_index
-
-
 
 
 
@@ -149,11 +120,11 @@ class Sheets():
 
         print(row_no)
 
-        date_range_name = self.sheet_name + '!'
-        date_range_name += 'A{0}:K{0}'.format(row_no)
+        rangeName = self.sheet_name + '!'
+        rangeName += 'A{0}:K{0}'.format(row_no)
 
         result = self.service.spreadsheets().values().get(
-                spreadsheetId=self.spreadsheetId, range=date_range_name,
+                spreadsheetId=self.spreadsheetId, range=rangeName,
                 majorDimension='ROWS').execute()
 
         values = result.get('values',[])
@@ -163,7 +134,7 @@ class Sheets():
         print("***** GET Row ***********")
         print("rwo no:", row_no)
         print("last", last)
-        print("Range NAme",date_range_name)
+        print("Range NAme",rangeName)
         print("result",result)
         print("values",values)
         print("Row",row)
@@ -184,16 +155,17 @@ class Sheets():
         if not type(row) is list:
             raise Exception('row is not a list')
 
-        date_row_index = self.get_date_row_index(row[0])
-        if date_row_index:
-            row_count  = date_row_index
-        else:
-            row_count = self.get_last_date(row_no=True) + 1 # give last row  +1 to instert into
+        row_count = self.get_last_date(row_no=True) + 1 # give last row  +1 to instert into
 
         print("********************")
         print('Item ', row)
         # Item  [u'09/08/2016', u'AUD', u'$0.00']
-
+        rangeName =None
+        # new_row = None
+        # if row[2] == 'AUD':
+        #     rangeName = self.sheet_name + '!'
+        #     rangeName += 'B{0}:B{0}'.format(row_count)
+        #     new_row = [row['date'],row['total_amounts']]
 
         print("********************")
 
@@ -207,73 +179,28 @@ class Sheets():
         print(new_row)
         print("*****************")
 
-        date_range_name = self.sheet_name + '!'
-        date_range_name += 'A{0}'.format(row_count)
-        print ("Range Name:",date_range_name)
-        
-        currency_range_name = self.sheet_name + '!'
-        
-        if row[1] == 'AUD':
-            currency_range_name += 'B{0}'.format(row_count)
-
-        if row[1] == 'EUR':
-            currency_range_name += 'C{0}'.format(row_count)
-            
-        if row[1] == 'USD':
-            currency_range_name += 'D{0}'.format(row_count)
-        if row[1] == 'CAD':
-            currency_range_name += 'E{0}'.format(row_count)
-
-        if row[1] == 'CHF':
-            currency_range_name += 'F{0}'.format(row_count)
-            
-        if row[1] == 'GBP':
-            currency_range_name += 'G{0}'.format(row_count)
-
-        if row[1] == 'HKD':
-            currency_range_name += 'H{0}'.format(row_count)
-
-        if row[1] == 'JPY':
-            currency_range_name += 'I{0}'.format(row_count)
-
-        if row[1] == 'NZD':
-            currency_range_name += 'J{0}'.format(row_count)
-        if row[1] == 'SGD':
-            currency_range_name += 'K{0}'.format(row_count)
-        
+        rangeName = self.sheet_name + '!'
+        rangeName += 'A{0}:V{0}'.format(row_count)
+        print ("Range Name:",rangeName)
         if new_row:
 
             body = {
-                'range' : date_range_name,
-                'values' : [[row[0]]],
-                'majorDimension' : 'COLUMNS'
+                'range' : rangeName,
+                'values' : [new_row],
+                'majorDimension' : 'ROWS'
             }
         #
             print("********** BODY ***************")
             print("BODY",body)
             result = self.service.spreadsheets().values().update(
-                    spreadsheetId=self.spreadsheetId, range=date_range_name,
+                    spreadsheetId=self.spreadsheetId, range=rangeName,
                     valueInputOption='USER_ENTERED', body=body).execute()
         #
             print("********** Result ***************")
 
             print ("RSULT",result)
             print("************************")
-
-
-
-            currency_body = {
-                    'range' : currency_range_name,
-                    'values' : [[row[2]]],
-                    'majorDimension' : 'COLUMNS'
-                }
-
-            result1 = self.service.spreadsheets().values().update(
-                        spreadsheetId=self.spreadsheetId, range=currency_range_name,
-                        valueInputOption='USER_ENTERED', body=currency_body).execute()
-
-            return result1,result
-
+            return result
 
     def sort_sheet(self):
 
