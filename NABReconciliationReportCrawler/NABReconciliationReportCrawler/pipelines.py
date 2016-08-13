@@ -8,11 +8,8 @@
 from NABReconciliationReportCrawler import settings
 from NABReconciliationReportCrawler.sheets import Sheets
 
-import time
-
 
 class NabreconciliationreportcrawlerPipeline(object):
-    pass
 
     def __init__(self):
         self.sheet = Sheets(
@@ -24,13 +21,8 @@ class NabreconciliationreportcrawlerPipeline(object):
 
     def close_spider(self, spider):
         self.sheet.sort_sheet()
-    #
-
-
-
 
     def process_item(self,item,spider):
-
 
         if item['date']:
             self.sheet.append_row([

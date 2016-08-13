@@ -1,19 +1,41 @@
 # -*- coding: utf-8 -*-
 import scrapy
-from scrapy.http import Request, FormRequest
 
-from scrapy.shell import  inspect_response
+from scrapy.shell import inspect_response
 from scrapy.utils.response import open_in_browser
 import sys
 import codecs
 import locale
 import json
-import re
-from datetime import  date
+from datetime import date
 import datetime
 from NABReconciliationReportCrawler.items import NabreconciliationreportcrawlerItem
 from NABReconciliationReportCrawler.sheets import Sheets
 from NABReconciliationReportCrawler import settings
+
+
+""" Get date range and currency """
+
+
+def curr_date(sheet_last_date):
+
+    from_date = sheet_last_date
+    date_currency_list = []
+    while from_date:
+        today = date.today()
+        today = today.strftime("%d/%m/%Y")
+        from_date = datetime.datetime.strptime(from_date, "%d/%m/%Y") + datetime.timedelta(days=1)
+        from_date = from_date.strftime("%d/%m/%Y")
+        currency_list = ['AUD', 'EUR', 'USD', 'CAD', 'CHF', 'GBP', 'HKD', 'JPY', 'NZD', 'SGD']
+        for currency in currency_list:
+            date_currency_list.append([from_date, currency])
+        if from_date == today:
+            from_date = False
+            date_currency_list.append([False, False])
+    return date_currency_list
+
+
+""" load json file """
 
 
 def load_login_data(filename):
@@ -37,12 +59,6 @@ class NabSpider(scrapy.Spider):
         sys.setdefaultencoding('utf-8')
 
         self.client_id = client_id.strip()
-
-        self.cli = 1
-        self.currency_list = ['AUD', 'EUR', 'USD', 'CAD', 'CHF', 'GBP', 'HKD', 'JPY', 'NZD', 'SGD',False]
-        # self.currency_list = ['USD',False]
-        self.currency = 'AUD'
-
         """ Setting Sheet name by client id """
         settings.SHEETS_PARAMETERS['sheet_name'] = self.client_id
         #
@@ -54,18 +70,10 @@ class NabSpider(scrapy.Spider):
         )
 
         self.sheet_last_date = sheet.get_last_date()
-        self.from_date = (datetime.datetime.strptime(self.sheet_last_date,"%d/%m/%Y") + datetime.timedelta(days=1))
-        self.from_date = self.from_date.strftime("%d/%m/%Y")
-        self.to_date = date.today().strftime("%d/%m/%Y")
-        self.to_date = "12/08/2016"
-        # self.from_date = "01/07/2016"
-        # self.to_date = "01/08/2016"
-
-        print("*************************************")
-        print ("Sheet From Date", self.from_date)
-        print("**************************************")
-        print ("Sheet To Date", self.to_date)
-
+        self.date_currency_list = curr_date(self.sheet_last_date)
+        self.index = 1
+        self.currency = self.date_currency_list[0][1]
+        self.from_date = self.date_currency_list[0][0]
 
         try:
             self.login_credentials_list = load_login_data('data/login_data/login_data.json')
@@ -84,7 +92,6 @@ class NabSpider(scrapy.Spider):
                 formdata={'j_subaccount': login_data['client_id'].strip(),
                           'j_username': login_data['username'].strip(),
                           'j_password': login_data['password'].strip()
-                          # 'j_password': "dfs"
                           },
                 callback=self.after_login,
 
@@ -123,52 +130,55 @@ class NabSpider(scrapy.Spider):
     def search_reconciliation_report(self, response):
         # inspect_response(response, self)
 
-
         while self.currency:
-
             yield scrapy.FormRequest.from_response(
                 response,
                 formdata={
                     'merchid': self.client_id,
                     'fromdate': self.from_date,
-                    'todate': self.to_date,
+                    'todate': self.from_date,
                     'cardtypes': 'vm',
                     'currency': self.currency,
-
                 }
                 ,
                 callback=self.search_results,
                 method="POST",
-                # dont_filter=True,
-                meta={'currency': self.currency}
-
+                meta={'currency': self.currency, 'date': self.from_date}
             )
-
 
     def search_results(self, response):
         # inspect_response(response,self)
-
-
         data_table_elem = response.xpath("//table[@id='datatable']")
+        from_date_errors = response.xpath("//span[@id='fromdate.errors']")
+        to_date_errors = response.xpath("//span[@id='todate.errors']")
 
         if data_table_elem:
+            self.from_date = self.date_currency_list[self.index][0]
+            self.currency = self.date_currency_list[self.index][1]
+            self.index += 1
 
-            self.currency = self.currency_list[self.cli]
-            self.cli += 1
-            # inspect_response(response,self)
+            total_amounts = data_table_elem.xpath(".//td/text()").extract()[-1]
+            total_amounts = total_amounts.replace("$", '').encode('ascii', 'ignore')
+            item = NabreconciliationreportcrawlerItem()
 
+            item['total_amounts'] = total_amounts
+            item['currency'] = response.meta['currency']
+            item['date'] = response.meta['date']
+            yield item
 
-            for data in data_table_elem.xpath(".//tr"):
-                # date = data.xpath(".//td/a/@href").extract()
-                date = data.xpath("normalize-space(.//td/a/@href)").extract_first()
-                if date:
-                    date = re.search(r'[\d\/]+', date).group()
-                    total_amounts = data.xpath(".//td/text()").extract()[-1]
-                    print(date,total_amounts)
-                    item = NabreconciliationreportcrawlerItem()
-                    item['total_amounts'] = total_amounts
-                    item['currency'] = response.meta['currency']
-                    item['date'] = date
-
-                    yield item
-
+        else:
+            self.from_date = self.date_currency_list[self.index][0]
+            self.currency = self.date_currency_list[self.index][1]
+            self.index += 1
+            self.logger.error("*******************************************")
+        if from_date_errors:
+            self.logger.error("From Date:{} {}  For Currency {}".
+                              format(response.meta['currency'],
+                                     from_date_errors.xpath("text()").extract_first(),
+                                     response.meta['date']))
+        if to_date_errors:
+            self.logger.error("To Date: {} {} for Currency {} ".
+                              format(response.meta['date'],
+                                     from_date_errors.xpath("text()").extract_first(),
+                                     response.meta['currency']))
+            self.logger.error("*******************************************")

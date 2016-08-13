@@ -10,7 +10,8 @@ import oauth2client
 from oauth2client import client
 from oauth2client import tools
 
-class Sheets():
+
+class Sheets:
 
     def __init__(self, spreadsheetId, client_secret_file, application_name, sheet_name):
         self.flags = None
@@ -36,14 +37,7 @@ class Sheets():
 
         self.sheet_name = sheet_name
         self.sheet_id = sheet[0][0]
-
         self.last_row = self.get_row(last=True)
-
-        print("********** INIT ****************")
-        print('self.last_row',self.last_row)
-        print('sheet',sheet)
-        print('result',result)
-        print ("********** INIT *****************")
 
     def get_credentials(self):
         """Gets valid user credentials from storage.
@@ -69,7 +63,6 @@ class Sheets():
                 credentials = tools.run_flow(flow, store, flags)
             else: # Needed only for compatibility with Python 2.6
                 credentials = tools.run(flow, store)
-            # print('Storing credentials to ' + credential_path)
         return credentials
 
     def get_last_date(self, row_no = False):
@@ -80,23 +73,16 @@ class Sheets():
                 spreadsheetId=self.spreadsheetId, range=date_range_name,
                 majorDimension='COLUMNS').execute()
 
-
-        values = result.get('values',[])
-
+        values = result.get('values', [])
         last_date = values[0][-1]
-        print("****** GET LAST DATE **********")
-        print("RAnge NAme", date_range_name)
-        print("Results", result)
-        print("VAlues", values)
-        print("Last DAte", last_date)
-        print("******** Get Last DAte ****************")
-
+     
         if row_no:
             return len(values[0])
         else:
             return last_date
 
-
+    """ To get date row index if exists"""
+    
     def get_date_row_index(self, check_date):
         date_range_name = self.sheet_name + '!'
         date_range_name += 'A1:A'
@@ -105,49 +91,21 @@ class Sheets():
                 spreadsheetId=self.spreadsheetId, range=date_range_name,
                 majorDimension='COLUMNS').execute()
 
-
-        values = result.get('values',[])
-
+        values = result.get('values', [])
         last_date = values[0]
         date_row_index = False
         if check_date in last_date:
-            date_row_index = last_date.index(check_date) +1
-
-
-        print("****** GET LAST DATE **********")
-        print("RAnge NAme", date_range_name)
-        print("Results", result)
-        print("VAlues", values)
-        print("Last DAte", last_date)
-        print("******** Get Last DAte ****************")
+            date_row_index = last_date.index(check_date) + 1
 
         return date_row_index
-
-
-
-
-
-
-
-
-
-
+    
     def get_row(self, row_no = None, last = False):
 
-        print("****************")
-        print("rwo now",row_no)
-        print("last",last)
-        print("****************")
         if not row_no and not last:
             raise ValueError('Invalid usage')
 
         if last:
             row_no = self.get_last_date(row_no = True)  ## give row number
-
-            print("******* ROW NO *********")
-            print(row_no)
-
-        print(row_no)
 
         date_range_name = self.sheet_name + '!'
         date_range_name += 'A{0}:K{0}'.format(row_no)
@@ -158,67 +116,34 @@ class Sheets():
 
         values = result.get('values',[])
 
-
         row = values[0]## give row value of row number
-        print("***** GET Row ***********")
-        print("rwo no:", row_no)
-        print("last", last)
-        print("Range NAme",date_range_name)
-        print("result",result)
-        print("values",values)
-        print("Row",row)
-        print("****************")
-
-
+       
         return row
 
     def append_row(self, row):
-        ## rwo from pipeline
-        # [u'03/08/2016', 'USD', u'$1433.21']
-
-
-        print("*********** APPEND ROW **************")
-        print("ROW", row) # [u'03/08/2016', 'USD', u'$1433.21']
-        print("*************************")
 
         if not type(row) is list:
             raise Exception('row is not a list')
 
         date_row_index = self.get_date_row_index(row[0])
         if date_row_index:
-            row_count  = date_row_index
+            row_count = date_row_index
         else:
             row_count = self.get_last_date(row_no=True) + 1 # give last row  +1 to instert into
-
-        print("********************")
-        print('Item ', row)
-        # Item  [u'09/08/2016', u'AUD', u'$0.00']
-
-
-        print("********************")
-
-        print("***** ROW Count ************")
-        print(row_count)
-        print("*****************")
-
-        new_row = row[0:11] # A-K
-
-        print("****** NEW ROW ***********")
-        print(new_row)
-        print("*****************")
-
+            
+        new_row = row[0:11]  # A-K
+     
         date_range_name = self.sheet_name + '!'
         date_range_name += 'A{0}'.format(row_count)
-        print ("Range Name:",date_range_name)
-        
+
         currency_range_name = self.sheet_name + '!'
-        
+
         if row[1] == 'AUD':
             currency_range_name += 'B{0}'.format(row_count)
 
         if row[1] == 'EUR':
             currency_range_name += 'C{0}'.format(row_count)
-            
+
         if row[1] == 'USD':
             currency_range_name += 'D{0}'.format(row_count)
         if row[1] == 'CAD':
@@ -226,7 +151,7 @@ class Sheets():
 
         if row[1] == 'CHF':
             currency_range_name += 'F{0}'.format(row_count)
-            
+
         if row[1] == 'GBP':
             currency_range_name += 'G{0}'.format(row_count)
 
@@ -240,45 +165,32 @@ class Sheets():
             currency_range_name += 'J{0}'.format(row_count)
         if row[1] == 'SGD':
             currency_range_name += 'K{0}'.format(row_count)
-        
+
         if new_row:
 
-            body = {
-                'range' : date_range_name,
-                'values' : [[row[0]]],
-                'majorDimension' : 'COLUMNS'
+            date_body = {
+                'range': date_range_name,
+                'values': [[row[0]]],
+                'majorDimension': 'COLUMNS'
             }
-        #
-            print("********** BODY ***************")
-            print("BODY",body)
-            result = self.service.spreadsheets().values().update(
+            date_result = self.service.spreadsheets().values().update(
                     spreadsheetId=self.spreadsheetId, range=date_range_name,
-                    valueInputOption='USER_ENTERED', body=body).execute()
-        #
-            print("********** Result ***************")
-
-            print ("RSULT",result)
-            print("************************")
-
-
+                    valueInputOption='USER_ENTERED', body=date_body).execute()
 
             currency_body = {
                     'range' : currency_range_name,
                     'values' : [[row[2]]],
-                    'majorDimension' : 'COLUMNS'
+                    'majorDimension': 'COLUMNS'
                 }
 
-            result1 = self.service.spreadsheets().values().update(
+            currency_result = self.service.spreadsheets().values().update(
                         spreadsheetId=self.spreadsheetId, range=currency_range_name,
                         valueInputOption='USER_ENTERED', body=currency_body).execute()
 
-            return result1,result
-
+            return currency_result, date_result
 
     def sort_sheet(self):
-
         sort_column_index = 0 # sort using 1st column
-
         body = {
             'requests': [
                 {
@@ -309,10 +221,9 @@ class Sheets():
 
 if __name__=='__main__':
     #     1iNeNK-ATYFpu1wvS_JLZKjzcVVDqYbmcW6Dn8c705Xs
-    # my 1ySYHMNyx6FDumf2AFDmwLxI5dYwU1tkiaalbmiwGHa8
 
-    sheet = Sheets(spreadsheetId = '1ySYHMNyx6FDumf2AFDmwLxI5dYwU1tkiaalbmiwGHa8',
-            client_secret_file = 'client_secret.json',
-            application_name = 'FinancialData',
-            sheet_name = 'V46')
+    sheet = Sheets(spreadsheetId='1iNeNK-ATYFpu1wvS_JLZKjzcVVDqYbmcW6Dn8c705Xs',
+                   client_secret_file='client_secret.json',
+                   application_name='FinancialData',
+                   sheet_name='V46')
 
