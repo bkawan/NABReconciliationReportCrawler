@@ -7,7 +7,7 @@
 
 from NABReconciliationReportCrawler import settings
 from NABReconciliationReportCrawler.sheets import Sheets
-
+import time
 
 class NabreconciliationreportcrawlerPipeline(object):
 
@@ -25,6 +25,7 @@ class NabreconciliationreportcrawlerPipeline(object):
     def process_item(self,item,spider):
 
         if item['date']:
+            time.sleep(1)
             self.sheet.append_row([
                 item['date'],
                 item['currency'],
